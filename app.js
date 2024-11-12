@@ -6,6 +6,7 @@ import authRouter from './routes/auth.js';
 dotenv.config();
 
 const app = express();
+app.use(express.json());
 connectToDB();
 
 app.use('/api/v1/auth', authRouter);
