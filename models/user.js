@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  otp: { type: Number },
+  otpExpiration: { type: Date },
+  isVerified: { type: Boolean, default: false },
+  resetPasswordToken: { type: Number },
+  resetPasswordExpires: { type: Date },
 });
 
 const User = mongoose.model('User', userSchema);

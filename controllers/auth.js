@@ -1,4 +1,5 @@
 import { validationResult } from 'express-validator';
+import crypto from 'crypto';
 import { formatErrors } from '../lib/util.js';
 import { hashPassword, matchPassword } from '../services/password_service.js';
 import User from '../models/user.js';
@@ -6,6 +7,7 @@ import {
   generate_access_token,
   generate_refresh_token,
 } from '../services/jwt_service.js';
+import sendVerification from '../services/mail/otp.js';
 
 export async function login(req, res) {
   const errors = validationResult(req);
@@ -25,6 +27,9 @@ export async function login(req, res) {
   const match = await matchPassword(password, user.password);
 
   if (!match) return res.sendStatus(401);
+
+  if (!user.isVerified)
+    return res.status(422).json({ errors: { email: 'email is not verified' } });
 
   const access_token = generate_access_token(
     user._id,
@@ -63,14 +68,20 @@ export async function signup(req, res) {
 
   const hashedPassword = await hashPassword(password);
 
+  const otp = crypto.randomInt(1000, 9999);
+  const otpExpiration = Date.now() + 10 * 60 * 1000;
+
   const newUser = new User({
     username,
     password: hashedPassword,
     email,
+    otp,
+    otpExpiration,
   });
 
   await newUser.save();
-  res.sendStatus(201);
+  await sendVerification(newUser);
+  res.status(201).json({ message: 'Verify your email' });
 }
 
 export async function refresh_token(req, res) {
