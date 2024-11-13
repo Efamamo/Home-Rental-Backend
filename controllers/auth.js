@@ -179,8 +179,8 @@ export async function verify_otp(req, res) {
   if (user.isVerified)
     return res.status(422).json({ message: 'User already verified' });
 
-  if (user.otp !== parseInt(otp) || Date.now() > user.otpExpiration) {
-    return res.status(422).json({ message: 'Invalid or expired OTP' });
+  if (Date.now() > user.otpExpiration) {
+    return res.status(422).json({ message: 'Expired OTP' });
   }
 
   user.isVerified = true;
@@ -214,6 +214,8 @@ export async function forgot_password(req, res) {
   const token = crypto.randomInt(100000, 999999);
   user.resetPasswordToken = token;
   user.resetPasswordExpires = Date.now() + 3600000;
+
+  await user.save();
 
   await sendPasswordResetLink(token, user);
   res.sendStatus(200);
@@ -256,4 +258,23 @@ export async function reset_password(req, res) {
     res.status(400).json({ errors: formattedErrors });
     return;
   }
+
+  const token = req.query.token;
+  const { new_password } = req.body;
+
+  const user = await User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json('Invalid or expired link');
+  }
+
+  user.password = await hashPassword(new_password);
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+
+  await user.save();
+  res.sendStatus(200);
 }

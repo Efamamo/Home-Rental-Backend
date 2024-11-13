@@ -5,7 +5,7 @@ export async function hashPassword(password) {
     const hashedPassword = await bcrypt.hash(password, 10);
     return hashedPassword;
   } catch (error) {
-    throw new Error(e);
+    console.log(error);
   }
 }
 
@@ -14,6 +14,6 @@ export async function matchPassword(password, hashed_password) {
     const match = await bcrypt.compare(password, hashed_password);
     return match;
   } catch (error) {
-    throw new Error(e);
+    console.log(e);
   }
 }
