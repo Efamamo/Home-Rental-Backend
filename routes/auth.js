@@ -7,8 +7,11 @@ import {
   refresh_token,
   reset_password,
   signup,
+  verify_otp,
   verify_token,
 } from '../controllers/auth.js';
+import require_auth from '../middleware/require_auth.js';
+import require_admin_auth from '../middleware/require_admin_auth.js';
 
 const authRouter = Router();
 
@@ -52,6 +55,16 @@ authRouter.post(
 );
 
 authRouter.patch(
+  '/verify-otp',
+  [
+    check('otp').notEmpty().withMessage('otp is required'),
+    check('email').notEmpty().withMessage('email is required'),
+    check('email').normalizeEmail().isEmail().withMessage('email is invalid'),
+  ],
+  verify_otp
+);
+
+authRouter.patch(
   '/forgot-password',
   [
     check('email').notEmpty().withMessage('email is required'),
@@ -62,6 +75,8 @@ authRouter.patch(
 
 authRouter.patch(
   '/change-password',
+  require_auth,
+
   [
     check('old_password').notEmpty().withMessage('old_password is required'),
     check('old_password').notEmpty().withMessage('old_password is required'),
@@ -71,6 +86,7 @@ authRouter.patch(
   ],
   change_password
 );
+
 authRouter.patch(
   '/reset-password',
   check('new_password')

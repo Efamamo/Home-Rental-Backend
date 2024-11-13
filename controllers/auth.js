@@ -9,6 +9,7 @@ import {
 } from '../services/jwt_service.js';
 import sendVerification from '../services/mail/otp.js';
 import { sendPasswordResetLink } from '../services/mail/reset.js';
+import jwt from 'jsonwebtoken';
 
 export async function login(req, res) {
   const errors = validationResult(req);
@@ -93,8 +94,21 @@ export async function refresh_token(req, res) {
     res.status(400).json({ errors: formattedErrors });
     return;
   }
-  if (!user.isVerified)
-    return res.status(422).json({ error: 'Email not verified' });
+
+  const { token } = req.body;
+
+  jwt.verify(token, process.env.REFRESH_TOKEN_KEY, (err, user) => {
+    if (err) return res.sendStatus(401);
+
+    const access_token = generate_access_token(
+      user.id,
+      user.isAdmin,
+      user.username,
+      user.email
+    );
+
+    res.status(201).json({ access_token, refresh_token: token });
+  });
 }
 
 export async function verify_token(req, res) {
@@ -105,6 +119,77 @@ export async function verify_token(req, res) {
     res.status(400).json({ errors: formattedErrors });
     return;
   }
+
+  const authHeader = req.headers['authorization'];
+  const access_token = authHeader && authHeader.split(' ')[1];
+  const { token } = req.body;
+
+  if (access_token == null) {
+    jwt.verify(token, process.env.REFRESH_TOKEN_KEY, (err, user) => {
+      if (err) return res.sendStatus(401);
+
+      const access_token = generate_access_token(
+        user.id,
+        user.isAdmin,
+        user.username,
+        user.email
+      );
+
+      res.status(201).json({ access_token, refresh_token: token });
+    });
+  } else {
+    jwt.verify(access_token, process.env.ACCESS_TOKEN_KEY, (err, user) => {
+      if (err) {
+        jwt.verify(token, process.env.REFRESH_TOKEN_KEY, (err, user) => {
+          if (err) return res.sendStatus(401);
+
+          const access_token = generate_access_token(
+            user.id,
+            user.isAdmin,
+            user.username,
+            user.email
+          );
+
+          return res.status(201).json({ access_token, refresh_token: token });
+        });
+      }
+      res.status(201).json({ access_token, refresh_token: token });
+    });
+  }
+}
+
+export async function verify_otp(req, res) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    const formattedErrors = formatErrors(errors);
+    res.status(400).json({ errors: formattedErrors });
+    return;
+  }
+
+  const { email, otp } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.sendStatus(401);
+
+  if (user.otp != otp) {
+    return res.status(422).json({ error: 'incorrect otp' });
+  }
+
+  if (user.isVerified)
+    return res.status(422).json({ message: 'User already verified' });
+
+  if (user.otp !== parseInt(otp) || Date.now() > user.otpExpiration) {
+    return res.status(422).json({ message: 'Invalid or expired OTP' });
+  }
+
+  user.isVerified = true;
+  user.otp = null;
+  user.otpExpiration = null;
+
+  await user.save();
+
+  res.sendStatus(200);
 }
 
 export async function forgot_password(req, res) {
@@ -144,13 +229,14 @@ export async function change_password(req, res) {
   }
 
   const { old_password, new_password } = req.body;
-  const id = '6733b0f23d3545c0b5af26f3';
+  const { id } = req.user;
 
   const user = await User.findById(id);
   if (!user) return res.sendStatus(401);
 
   const match = await matchPassword(old_password, user.password);
-  if (!match) return res.sendStatus(401);
+  if (!match)
+    return res.status(422).json({ error: 'old password is incorrect' });
 
   if (!user.isVerified)
     return res.status(422).json({ error: 'Email not verified' });
