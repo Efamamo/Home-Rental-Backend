@@ -25,10 +25,10 @@ const sendVerification = async (user) => {
             </span>
           </div>
           
-          <p style="color: #555;">If you didn’t request this email, please ignore it.</p>
+          <p style="color: #555;">If you didn't request this email, please ignore it.</p>
           
           <footer style="text-align: center; padding-top: 20px; border-top: 1px solid #ddd; color: #aaa;">
-            <p style="margin: 0;">&copy; ${new Date().getFullYear()} CartVerse. All rights reserved.</p>
+            <p style="margin: 0;">&copy; ${new Date().getFullYear()} Rentify. All rights reserved.</p>
           </footer>
         </div>
       </div>
