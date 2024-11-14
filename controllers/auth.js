@@ -11,6 +11,17 @@ import sendVerification from '../services/mail/otp.js';
 import { sendPasswordResetLink } from '../services/mail/reset.js';
 import jwt from 'jsonwebtoken';
 
+export async function users(req, res) {
+  try {
+    const users = await User.find().select('-password');
+
+    res.json({ users });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 export async function login(req, res) {
   const errors = validationResult(req);
 

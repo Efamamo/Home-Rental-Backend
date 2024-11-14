@@ -10,6 +10,7 @@ import {
   resend_otp,
   reset_password,
   signup,
+  users,
   verify_otp,
   verify_token,
 } from '../controllers/auth.js';
@@ -67,6 +68,8 @@ authRouter.post(
   ],
   resend_otp
 );
+
+authRouter.get('/users', authorize(['Admin']), users);
 
 authRouter.patch(
   '/verify-otp',
