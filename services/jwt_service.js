@@ -2,10 +2,10 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export function generate_access_token(id, isAdmin, username, email) {
+export function generate_access_token(id, role, username, email) {
   try {
     const access_token = jwt.sign(
-      { id, isAdmin, username, email },
+      { id, role, username, email },
       process.env.ACCESS_TOKEN_KEY,
       { expiresIn: '15m' }
     );
@@ -15,10 +15,10 @@ export function generate_access_token(id, isAdmin, username, email) {
   }
 }
 
-export function generate_refresh_token(id, isAdmin, username, email) {
+export function generate_refresh_token(id, role, username, email) {
   try {
     const refresh_token = jwt.sign(
-      { id, isAdmin, username, email },
+      { id, role, username, email },
       process.env.REFRESH_TOKEN_KEY,
       { expiresIn: '3d' }
     );

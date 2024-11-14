@@ -35,13 +35,13 @@ export async function login(req, res) {
 
   const access_token = generate_access_token(
     user._id,
-    user.isAdmin,
+    user.role,
     user.username,
     user.email
   );
   const refresh_token = generate_refresh_token(
     user._id,
-    user.isAdmin,
+    user.role,
     user.username,
     user.email
   );
@@ -58,7 +58,7 @@ export async function signup(req, res) {
     return;
   }
 
-  const { username, email, password } = req.body;
+  const { username, email, password, role } = req.body;
 
   let user = await User.findOne({ username });
   if (user)
@@ -79,6 +79,7 @@ export async function signup(req, res) {
     email,
     otp,
     otpExpiration,
+    role,
   });
 
   await newUser.save();
@@ -277,4 +278,41 @@ export async function reset_password(req, res) {
 
   await user.save();
   res.sendStatus(200);
+}
+
+export async function promote(req, res) {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.role == 'Buyer') {
+      user.role = 'Seller';
+      await user.save();
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function demote(req, res) {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.role == 'Seller') {
+      user.role = 'Buyer';
+      await user.save();
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.log(error);
+  }
 }

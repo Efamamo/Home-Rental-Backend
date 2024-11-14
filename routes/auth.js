@@ -2,16 +2,17 @@ import { Router } from 'express';
 import { check } from 'express-validator';
 import {
   change_password,
+  demote,
   forgot_password,
   login,
+  promote,
   refresh_token,
   reset_password,
   signup,
   verify_otp,
   verify_token,
 } from '../controllers/auth.js';
-import require_auth from '../middleware/require_auth.js';
-import require_admin_auth from '../middleware/require_admin_auth.js';
+import { authorize } from '../middleware/authorize.js';
 
 const authRouter = Router();
 
@@ -38,6 +39,9 @@ authRouter.post(
       .withMessage('minimum password length is 6'),
     check('email').notEmpty().withMessage('email is required'),
     check('email').normalizeEmail().isEmail().withMessage('email is invalid'),
+    check('role')
+      .isIn(['Seller', 'Buyer'])
+      .withMessage('Role must be either Seller or Buyer'),
   ],
   signup
 );
@@ -75,7 +79,7 @@ authRouter.patch(
 
 authRouter.patch(
   '/change-password',
-  require_auth,
+  authorize(['Seller', 'Admin', 'Buyer']),
 
   [
     check('old_password').notEmpty().withMessage('old_password is required'),
@@ -94,5 +98,8 @@ authRouter.patch(
     .withMessage('minimum password length is 6'),
   reset_password
 );
+
+authRouter.patch('/promote/:id', authorize(['Admin']), promote);
+authRouter.patch('/demote/:id', authorize(['Admin']), demote);
 
 export default authRouter;
