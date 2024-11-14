@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { authorize } from '../middleware/authorize.js';
-import { addHouse, getHouse, getHouses } from '../controllers/house.js';
+import {
+  addHouse,
+  deleteHouse,
+  getHouse,
+  getHouses,
+  updateHouse,
+  updateHouseImages,
+} from '../controllers/house.js';
 import { check } from 'express-validator';
 import uploadImages from '../middleware/file_upload.js';
 
@@ -24,7 +31,14 @@ houseRouter.post(
 
   addHouse
 );
-houseRouter.patch('/:id', authorize(['Admin', 'Seller'], true));
-houseRouter.delete('/:id', authorize(['Admin', 'Seller'], true));
+houseRouter.patch('/:id', authorize(['Admin', 'Seller'], true), updateHouse);
+houseRouter.patch(
+  '/:id/image',
+  uploadImages,
+  authorize(['Admin', 'Seller'], true),
+  updateHouseImages
+);
+
+houseRouter.delete('/:id', authorize(['Admin', 'Seller'], true), deleteHouse);
 
 export default houseRouter;

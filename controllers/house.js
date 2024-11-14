@@ -52,7 +52,7 @@ export async function addHouse(req, res) {
   if (!image_url) {
     return res.status(400).send({
       errors: {
-        image: 'main_image is required',
+        image: 'main_image is required and should be image file',
       },
     });
   }
@@ -78,3 +78,98 @@ export async function addHouse(req, res) {
 
   res.status(201).json(newHouse);
 }
+
+export async function deleteHouse(req, res) {
+  try {
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid Product ID' });
+    }
+
+    const product = await House.findByIdAndDelete(id);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product Not Found' });
+    }
+
+    res.sendStatus(204);
+  } catch (error) {
+    res.status(500).json({ error: 'Server Error' });
+  }
+}
+
+export async function updateHouse(req, res) {
+  try {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid Product ID' });
+    }
+
+    const updateData = {};
+    const allowedFields = [
+      'title',
+      'location',
+      'description',
+      'price',
+      'for_sell',
+      'ownerId',
+    ];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    const updatedHouse = await House.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedHouse) {
+      return res.status(404).json({ error: 'House Not Found' });
+    }
+
+    res.json(updatedHouse);
+  } catch (error) {
+    res.status(500).json({ error: 'Server Error' });
+  }
+}
+
+export const updateHouseImages = async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid Product ID' });
+    }
+
+    const imageURL = req.files.main_image;
+    if (!imageURL) {
+      return res.status(400).send({
+        errors: {
+          image: 'main_image is required',
+        },
+      });
+    }
+
+    const house = await House.findById(id);
+
+    if (!house) {
+      return res.status(404).json({ error: 'House Not Found' });
+    }
+
+    house.main_image = imageURL[0].path;
+
+    const subImageUrl = req.files.sub_images;
+    if (subImageUrl) {
+      house.sub_images = subImageUrl[0].path;
+    }
+
+    await house.save();
+    res.json(house);
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
