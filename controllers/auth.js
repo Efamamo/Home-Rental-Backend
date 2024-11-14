@@ -193,6 +193,38 @@ export async function verify_otp(req, res) {
   res.sendStatus(200);
 }
 
+export const resend_otp = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: formatErrors(errors) });
+    }
+
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: 'User already verified' });
+    }
+
+    const otp = crypto.randomInt(1000, 9999);
+    const otpExpiration = Date.now() + 10 * 60 * 1000;
+
+    user.otp = otp;
+    user.otpExpiration = otpExpiration;
+
+    await user.save();
+
+    await sendVerification(user);
+    res.sendStatus(200);
+  } catch (e) {
+    res.status(500).json({ error: e });
+  }
+};
+
 export async function forgot_password(req, res) {
   const errors = validationResult(req);
 
@@ -302,7 +334,6 @@ export async function demote(req, res) {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
-    
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 

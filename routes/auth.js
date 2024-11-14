@@ -7,6 +7,7 @@ import {
   login,
   promote,
   refresh_token,
+  resend_otp,
   reset_password,
   signup,
   verify_otp,
@@ -56,6 +57,15 @@ authRouter.post(
   '/verify-token',
   check('token').notEmpty().withMessage('token is required'),
   verify_token
+);
+
+authRouter.post(
+  '/send-otp',
+  [
+    check('email').notEmpty().withMessage('email cant be empty'),
+    check('email').normalizeEmail().isEmail().withMessage('invalid email'),
+  ],
+  resend_otp
 );
 
 authRouter.patch(
