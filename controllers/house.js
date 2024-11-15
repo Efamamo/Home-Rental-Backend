@@ -10,7 +10,7 @@ export async function getHouses(req, res) {
     const houses = await House.find();
     res.json(houses);
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error });
   }
 }
 
@@ -26,72 +26,76 @@ export async function getHouse(req, res) {
 
     res.json(house);
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error });
   }
 }
 
 export async function addHouse(req, res) {
-  const er = validationResult(req);
+  try {
+    const er = validationResult(req);
 
-  if (!er.isEmpty()) {
-    console.log(req.files);
-    if (req.files.main_image) {
-      fs.unlink(req.files.main_image[0].path, (err) => {
-        console.log(err);
+    if (!er.isEmpty()) {
+      console.log(req.files);
+      if (req.files.main_image) {
+        fs.unlink(req.files.main_image[0].path, (err) => {
+          console.log(err);
+        });
+      }
+
+      if (req.files.sub_images) {
+        fs.unlink(req.files.sub_images[0].path, (err) => {
+          console.log(err);
+        });
+      }
+      return res.status(400).json({ errors: formatErrors(er) });
+    }
+
+    const image_url = req.files.main_image;
+    if (!image_url) {
+      return res.status(400).send({
+        errors: {
+          image: 'main_image is required and should be image file',
+        },
       });
     }
 
-    if (req.files.sub_images) {
-      fs.unlink(req.files.sub_images[0].path, (err) => {
-        console.log(err);
-      });
-    }
-    return res.status(400).json({ errors: formatErrors(er) });
-  }
+    const {
+      title,
+      location,
+      description,
+      price,
+      for_rent,
+      number_of_bedrooms,
+      number_of_bathrooms,
+      number_of_floors,
+      category,
+    } = req.body;
+    const { id } = req.user;
 
-  const image_url = req.files.main_image;
-  if (!image_url) {
-    return res.status(400).send({
-      errors: {
-        image: 'main_image is required and should be image file',
-      },
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const newHouse = new House({
+      title,
+      location,
+      description,
+      price,
+      for_rent,
+      ownerId: id,
+      main_image: image_url[0].path,
+      sub_images: image_url.sub_images ? image_url.sub_images[0].path : [],
+      number_of_bedrooms,
+      number_of_bathrooms,
+      number_of_floors,
+      category,
     });
+
+    await newHouse.save();
+
+    res.status(201).json(newHouse);
+  } catch (error) {
+    res.status(500).json({ error });
   }
-
-  const {
-    title,
-    location,
-    description,
-    price,
-    for_rent,
-    number_of_bedrooms,
-    number_of_bathrooms,
-    number_of_floors,
-    category,
-  } = req.body;
-  const { id } = req.user;
-
-  const user = await User.findById(id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const newHouse = new House({
-    title,
-    location,
-    description,
-    price,
-    for_rent,
-    ownerId: id,
-    main_image: image_url[0].path,
-    sub_images: image_url.sub_images ? image_url.sub_images[0].path : [],
-    number_of_bedrooms,
-    number_of_bathrooms,
-    number_of_floors,
-    category,
-  });
-
-  await newHouse.save();
-
-  res.status(201).json(newHouse);
 }
 
 export async function deleteHouse(req, res) {

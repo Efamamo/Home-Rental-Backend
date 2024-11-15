@@ -1,5 +1,4 @@
 import { validationResult } from 'express-validator';
-import crypto from 'crypto';
 import { formatErrors } from '../lib/util.js';
 import { hashPassword, matchPassword } from '../services/password_service.js';
 import User from '../models/user.js';
