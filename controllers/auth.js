@@ -7,8 +7,6 @@ import {
   generate_access_token,
   generate_refresh_token,
 } from '../services/jwt_service.js';
-import sendVerification from '../services/mail/otp.js';
-import { sendPasswordResetLink } from '../services/mail/reset.js';
 import jwt from 'jsonwebtoken';
 
 export async function users(req, res) {
@@ -31,9 +29,9 @@ export async function login(req, res) {
     return;
   }
 
-  const { username, password } = req.body;
+  const { phoneNumber, password } = req.body;
 
-  const user = await User.findOne({ username });
+  const user = await User.findOne({ phoneNumber });
 
   if (!user) return res.sendStatus(401);
 
@@ -41,20 +39,17 @@ export async function login(req, res) {
 
   if (!match) return res.sendStatus(401);
 
-  if (!user.isVerified)
-    return res.status(422).json({ errors: { email: 'email is not verified' } });
-
   const access_token = generate_access_token(
     user._id,
     user.role,
-    user.username,
-    user.email
+    user.name,
+    user.phoneNumber
   );
   const refresh_token = generate_refresh_token(
     user._id,
     user.role,
-    user.username,
-    user.email
+    user.name,
+    user.phoneNumber
   );
 
   res.status(201).json({ access_token, refresh_token });
@@ -69,33 +64,25 @@ export async function signup(req, res) {
     return;
   }
 
-  const { username, email, password, role } = req.body;
+  const { name, phoneNumber, password, role } = req.body;
 
-  let user = await User.findOne({ username });
-  if (user)
-    return res.status(409).json({ errors: { username: 'username is taken' } });
+  let user = await User.findOne({ name });
 
-  user = await User.findOne({ email });
+  user = await User.findOne({ phoneNumber });
   if (user)
-    return res.status(409).json({ errors: { email: 'email is taken' } });
+    return res.status(409).json({ errors: { email: 'phoneNumber is taken' } });
 
   const hashedPassword = await hashPassword(password);
 
-  const otp = crypto.randomInt(1000, 9999);
-  const otpExpiration = Date.now() + 10 * 60 * 1000;
-
   const newUser = new User({
-    username,
+    name,
     password: hashedPassword,
-    email,
-    otp,
-    otpExpiration,
+    phoneNumber,
     role,
   });
 
   await newUser.save();
-  await sendVerification(newUser);
-  res.status(201).json({ message: 'Verify your email' });
+  res.status(201).json(newUser);
 }
 
 export async function refresh_token(req, res) {
@@ -114,9 +101,9 @@ export async function refresh_token(req, res) {
 
     const access_token = generate_access_token(
       user.id,
-      user.isAdmin,
-      user.username,
-      user.email
+      user.role,
+      user.name,
+      user.phoneNumber
     );
 
     res.status(201).json({ access_token, refresh_token: token });
@@ -142,9 +129,9 @@ export async function verify_token(req, res) {
 
       const access_token = generate_access_token(
         user.id,
-        user.isAdmin,
-        user.username,
-        user.email
+        user.role,
+        user.name,
+        user.phoneNumber
       );
 
       res.status(201).json({ access_token, refresh_token: token });
@@ -157,9 +144,9 @@ export async function verify_token(req, res) {
 
           const access_token = generate_access_token(
             user.id,
-            user.isAdmin,
-            user.username,
-            user.email
+            user.role,
+            user.name,
+            user.phoneNumber
           );
 
           return res.status(201).json({ access_token, refresh_token: token });
@@ -168,101 +155,6 @@ export async function verify_token(req, res) {
       res.status(201).json({ access_token, refresh_token: token });
     });
   }
-}
-
-export async function verify_otp(req, res) {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    const formattedErrors = formatErrors(errors);
-    res.status(400).json({ errors: formattedErrors });
-    return;
-  }
-
-  const { email, otp } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) return res.sendStatus(401);
-
-  if (user.otp != otp) {
-    return res.status(422).json({ error: 'incorrect otp' });
-  }
-
-  if (user.isVerified)
-    return res.status(422).json({ message: 'User already verified' });
-
-  if (Date.now() > user.otpExpiration) {
-    return res.status(422).json({ message: 'Expired OTP' });
-  }
-
-  user.isVerified = true;
-  user.otp = null;
-  user.otpExpiration = null;
-
-  await user.save();
-
-  res.sendStatus(200);
-}
-
-export const resend_otp = async (req, res) => {
-  try {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: formatErrors(errors) });
-    }
-
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'User already verified' });
-    }
-
-    const otp = crypto.randomInt(1000, 9999);
-    const otpExpiration = Date.now() + 10 * 60 * 1000;
-
-    user.otp = otp;
-    user.otpExpiration = otpExpiration;
-
-    await user.save();
-
-    await sendVerification(user);
-    res.sendStatus(200);
-  } catch (e) {
-    res.status(500).json({ error: e });
-  }
-};
-
-export async function forgot_password(req, res) {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    const formattedErrors = formatErrors(errors);
-    res.status(400).json({ errors: formattedErrors });
-    return;
-  }
-
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user)
-    return res
-      .status(404)
-      .json({ errors: { email: 'User with provided email not found' } });
-
-  if (!user.isVerified)
-    return res.status(422).json({ error: 'Email not verified' });
-
-  const token = crypto.randomInt(100000, 999999);
-  user.resetPasswordToken = token;
-  user.resetPasswordExpires = Date.now() + 3600000;
-
-  await user.save();
-
-  await sendPasswordResetLink(token, user);
-  res.sendStatus(200);
 }
 
 export async function change_password(req, res) {
@@ -284,42 +176,10 @@ export async function change_password(req, res) {
   if (!match)
     return res.status(422).json({ error: 'old password is incorrect' });
 
-  if (!user.isVerified)
-    return res.status(422).json({ error: 'Email not verified' });
-
   const hashedPassword = await hashPassword(new_password);
   user.password = hashedPassword;
   await user.save();
 
-  res.sendStatus(200);
-}
-
-export async function reset_password(req, res) {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    const formattedErrors = formatErrors(errors);
-    res.status(400).json({ errors: formattedErrors });
-    return;
-  }
-
-  const token = req.query.token;
-  const { new_password } = req.body;
-
-  const user = await User.findOne({
-    resetPasswordToken: token,
-    resetPasswordExpires: { $gt: Date.now() },
-  });
-
-  if (!user) {
-    return res.status(400).json('Invalid or expired link');
-  }
-
-  user.password = await hashPassword(new_password);
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
-
-  await user.save();
   res.sendStatus(200);
 }
 

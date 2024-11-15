@@ -1,12 +1,11 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  username: {
+  name: {
     type: String,
-    unique: true,
     required: true,
   },
-  email: {
+  phoneNumber: {
     type: String,
     unique: true,
     required: true,
@@ -20,11 +19,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  otp: { type: Number },
-  otpExpiration: { type: Date },
-  isVerified: { type: Boolean, default: false },
-  resetPasswordToken: { type: Number },
-  resetPasswordExpires: { type: Date },
 });
 
 const User = mongoose.model('User', userSchema);

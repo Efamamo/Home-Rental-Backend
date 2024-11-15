@@ -3,15 +3,11 @@ import { check } from 'express-validator';
 import {
   change_password,
   demote,
-  forgot_password,
   login,
   promote,
   refresh_token,
-  resend_otp,
-  reset_password,
   signup,
   users,
-  verify_otp,
   verify_token,
 } from '../controllers/auth.js';
 import { authorize } from '../middleware/authorize.js';
@@ -21,7 +17,9 @@ const authRouter = Router();
 authRouter.post(
   '/login',
   [
-    check('username').notEmpty().withMessage('username is required'),
+    check('phoneNumber')
+      .isMobilePhone()
+      .withMessage('phoneNumber should be mobile phone'),
     check('password').notEmpty().withMessage('password is required'),
   ],
   login
@@ -30,17 +28,18 @@ authRouter.post(
 authRouter.post(
   '/signup',
   [
-    check('username')
+    check('name')
       .isLength({ min: 3 })
       .withMessage('minimum username length is 3'),
-    check('username')
+    check('name')
       .isLength({ max: 100 })
       .withMessage('maximum username length is 100'),
     check('password')
       .isLength({ min: 6 })
       .withMessage('minimum password length is 6'),
-    check('email').notEmpty().withMessage('email is required'),
-    check('email').normalizeEmail().isEmail().withMessage('email is invalid'),
+    check('phoneNumber')
+      .isMobilePhone()
+      .withMessage('phoneNumber should be mobile phone'),
     check('role')
       .isIn(['Seller', 'Buyer'])
       .withMessage('Role must be either Seller or Buyer'),
@@ -60,35 +59,7 @@ authRouter.post(
   verify_token
 );
 
-authRouter.post(
-  '/send-otp',
-  [
-    check('email').notEmpty().withMessage('email cant be empty'),
-    check('email').normalizeEmail().isEmail().withMessage('invalid email'),
-  ],
-  resend_otp
-);
-
 authRouter.get('/users', authorize(['Admin']), users);
-
-authRouter.patch(
-  '/verify-otp',
-  [
-    check('otp').notEmpty().withMessage('otp is required'),
-    check('email').notEmpty().withMessage('email is required'),
-    check('email').normalizeEmail().isEmail().withMessage('email is invalid'),
-  ],
-  verify_otp
-);
-
-authRouter.patch(
-  '/forgot-password',
-  [
-    check('email').notEmpty().withMessage('email is required'),
-    check('email').normalizeEmail().isEmail().withMessage('email is invalid'),
-  ],
-  forgot_password
-);
 
 authRouter.patch(
   '/change-password',
@@ -102,14 +73,6 @@ authRouter.patch(
       .withMessage('minimum password length is 6'),
   ],
   change_password
-);
-
-authRouter.patch(
-  '/reset-password',
-  check('new_password')
-    .isLength({ min: 6 })
-    .withMessage('minimum password length is 6'),
-  reset_password
 );
 
 authRouter.patch('/promote/:id', authorize(['Admin']), promote);
