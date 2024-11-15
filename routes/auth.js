@@ -29,11 +29,13 @@ authRouter.post(
   '/signup',
   [
     check('name')
-      .isLength({ min: 3 })
-      .withMessage('minimum username length is 3'),
-    check('name')
-      .isLength({ max: 100 })
-      .withMessage('maximum username length is 100'),
+      .trim()
+      .notEmpty()
+      .withMessage('Name is required.')
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Name must be between 2 and 100 characters.')
+      .matches(/^[a-zA-Zà-žÀ-Ž\s'-]+$/)
+      .withMessage('Name contains invalid characters.'),
     check('password')
       .isLength({ min: 6 })
       .withMessage('minimum password length is 6'),

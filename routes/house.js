@@ -5,6 +5,7 @@ import {
   deleteHouse,
   getHouse,
   getHouses,
+  rate,
   updateHouse,
   updateHouseImages,
 } from '../controllers/house.js';
@@ -24,9 +25,25 @@ houseRouter.post(
     check('location').notEmpty().withMessage('location is required'),
     check('description').notEmpty().withMessage('description is required'),
     check('price').isNumeric().withMessage('price should be number'),
-    check('for_sell')
+    check('for_rent')
       .isBoolean()
       .withMessage('for_sell should be true of false'),
+    check('number_of_bedrooms')
+      .isNumeric()
+      .withMessage('number_of_bedrooms should be number')
+      .isLength({ min: 0 })
+      .withMessage('number_of_bedroom cant be negative'),
+    check('number_of_bathrooms')
+      .isNumeric()
+      .withMessage('number_of_bathrooms should be number')
+      .isLength({ min: 0 })
+      .withMessage('number_of_bathrooms cant be negative'),
+    check('number_of_floors')
+      .isNumeric()
+      .withMessage('number_of_floors should be number')
+      .isLength({ min: 0 })
+      .withMessage('number_of_floors cant be negative'),
+    check('category').notEmpty().withMessage('category is required'),
   ],
 
   addHouse
@@ -40,5 +57,11 @@ houseRouter.patch(
 );
 
 houseRouter.delete('/:id', authorize(['Admin', 'Seller'], true), deleteHouse);
+houseRouter.patch(
+  '/:id/rate',
+  authorize(['Admin', 'Seller', 'Buyer']),
+  check('amount').isNumeric().withMessage('amount should be number'),
+  rate
+);
 
 export default houseRouter;
