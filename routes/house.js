@@ -2,12 +2,11 @@ import { Router } from 'express';
 import { authorize } from '../middleware/authorize.js';
 import { check } from 'express-validator';
 import uploadImages from '../middleware/file_upload.js';
-import { HouseController } from '../controllers/house.js';
 
 class HouseRoutes {
-  constructor() {
+  constructor(houseController) {
     this.router = Router();
-    this.houseController = new HouseController();
+    this.houseController = houseController;
     this.initializeRoutes();
   }
 
@@ -100,4 +99,4 @@ class HouseRoutes {
   }
 }
 
-export default new HouseRoutes().getRouter();
+export default HouseRoutes;

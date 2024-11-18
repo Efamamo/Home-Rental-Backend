@@ -74,7 +74,7 @@ export class AuthController {
     if (user)
       return res
         .status(409)
-        .json({ errors: { email: 'phoneNumber is taken' } });
+        .json({ errors: { phoneNumber: 'phoneNumber is taken' } });
 
     const hashedPassword = await hashPassword(password);
 

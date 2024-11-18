@@ -20,7 +20,6 @@ export const authorize = (roles, checkOwnership = false) => {
 
         if (checkOwnership) {
           const resourceId = req.params.id;
-          // Fetch The Resource
           if (resourceId !== userId && userRole !== 'Admin') {
             return res.status(403).json({
               message: 'Forbidden: You can only modify your own resources',
