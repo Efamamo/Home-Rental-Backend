@@ -19,7 +19,7 @@ class MessageController {
     const { id } = req.user;
 
     if (!mongoose.Types.ObjectId.isValid(recipientId)) {
-      return res.status(400).json({ error: 'Invalid Chat ID' });
+      return res.status(422).json({ error: 'Invalid Chat ID' });
     }
 
     const sender = await User.findById(id);
@@ -98,7 +98,7 @@ class MessageController {
 
     // Validate the message ID
     if (!mongoose.Types.ObjectId.isValid(mid)) {
-      return res.status(400).json({ error: 'Invalid message ID' });
+      return res.status(422).json({ error: 'Invalid message ID' });
     }
 
     // Find and delete the message
