@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { check } from 'express-validator';
 import { authorize } from '../middleware/authorize.js';
+import uploadImages from '../middleware/file_upload.js';
 
 class AuthRoutes {
   constructor(authController) {
@@ -341,6 +342,24 @@ class AuthRoutes {
       '/demote/:id',
       authorize(['Admin']),
       this.authController.demote
+    );
+    this.router.get(
+      '/profile',
+      authorize(['Admin', 'Buyer', 'Seller']),
+      this.authController.getProfile
+    );
+    this.router.patch(
+      '/profile',
+      authorize(['Admin', 'Buyer', 'Seller']),
+      uploadImages,
+      check('name')
+        .trim()
+        .notEmpty()
+        .withMessage('Name is required.')
+        .isLength({ min: 2, max: 100 })
+        .withMessage('Name must be between 2 and 100 characters.')
+        .matches(/^[a-zA-Zà-žÀ-Ž\s'-]+$/)
+        .withMessage('Name contains invalid characters.')
     );
   }
 }

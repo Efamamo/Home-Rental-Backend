@@ -86,7 +86,19 @@ export class AuthController {
     });
 
     await newUser.save();
-    res.status(201).json(newUser);
+    const access_token = generate_access_token(
+      newUser._id,
+      newUser.role,
+      newUser.name,
+      newUser.phoneNumber
+    );
+    const refresh_token = generate_refresh_token(
+      newUser._id,
+      newUser.role,
+      newUser.name,
+      newUser.phoneNumber
+    );
+    res.status(201).json({ access_token, refresh_token });
   }
 
   // refresh_token refreshes the access token
@@ -225,6 +237,50 @@ export class AuthController {
       res.sendStatus(200);
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async getProfile(req, res) {
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id).select('-password');
+
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      res.json(user);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: 'server error' });
+    }
+  }
+
+  async updateProfile(req, res) {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      const formattedErrors = formatErrors(errors);
+      res.status(400).json({ errors: formattedErrors });
+      return;
+    }
+    try {
+      const { id } = req.params;
+      const user = await User.findById(id);
+
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const { name } = req.body;
+
+      user.name = name;
+      user.profile_pic = req.files.main_image
+        ? req.files.main_image[0]
+        : user.profile_pic;
+
+      await user.save();
+
+      res.sendStatus(204);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: 'server error' });
     }
   }
 }

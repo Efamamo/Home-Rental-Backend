@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { House } from '../models/house.js';
 export const authorize = (roles, checkOwnership = false) => {
   return async (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -6,7 +7,7 @@ export const authorize = (roles, checkOwnership = false) => {
 
     if (token == null) return res.sendStatus(401);
 
-    jwt.verify(token, process.env.ACCESS_TOKEN_KEY, (err, user) => {
+    jwt.verify(token, process.env.ACCESS_TOKEN_KEY, async (err, user) => {
       if (err) return res.sendStatus(401);
 
       try {
@@ -20,7 +21,8 @@ export const authorize = (roles, checkOwnership = false) => {
 
         if (checkOwnership) {
           const resourceId = req.params.id;
-          if (resourceId !== userId && userRole !== 'Admin') {
+          const house = await House.findById(resourceId);
+          if (house.ownerId !== userId && userRole !== 'Admin') {
             return res.status(403).json({
               message: 'Forbidden: You can only modify your own resources',
             });
