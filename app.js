@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import http from 'http';
 import connectToDB from './database/mongoose.js';
 import { setupSwagger } from './lib/swagger.js';
 import AuthRoutes from './routes/auth.js';
@@ -9,10 +10,26 @@ import MessageController from './controllers/message.js';
 import MessageRoutes from './routes/message.js';
 import ChatController from './controllers/chat.js';
 import ChatRoutes from './routes/chat.js';
+import { Server } from 'socket.io';
 import HouseRoutes from './routes/house.js';
+import { handleSocket } from './lib/util.js';
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+export const io = new Server(server, {
+  cors: {
+    origin: '*',
+  },
+});
+
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
+
 app.use(express.json());
 connectToDB();
 
@@ -40,6 +57,6 @@ app.use((req, res, next) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(process.env.PORT, () => {
+server.listen(process.env.PORT, () => {
   console.log(`Listening at port ${process.env.PORT}`);
 });

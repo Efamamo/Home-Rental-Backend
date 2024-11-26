@@ -4,6 +4,8 @@ import Message from '../models/message.js';
 import { formatErrors } from '../lib/util.js';
 import mongoose from 'mongoose';
 import User from '../models/user.js';
+import { io } from '../app.js';
+import { compareAndOrderIds } from '../lib/util.js';
 
 class MessageController {
   async addMessage(req, res) {
@@ -51,6 +53,13 @@ class MessageController {
 
       await newChat.save();
       await message.save();
+
+      console.log(compareAndOrderIds(id, recipientId));
+
+      io.emit(`messageAdded-${compareAndOrderIds(id, recipientId)}`, {
+        id: newChat._id,
+        message,
+      });
     } else {
       const message = new Message({
         content,
@@ -63,6 +72,9 @@ class MessageController {
       chat.messages.push(message);
       await message.save();
       await chat.save();
+      console.log(compareAndOrderIds(id, recipientId));
+
+      io.emit(`messageAdded-${compareAndOrderIds(id, recipientId)}`, message);
     }
 
     res.sendStatus(201);
@@ -86,10 +98,28 @@ class MessageController {
 
     if (!message) return res.status(404).json({ error: 'Message not found' });
 
+    const chat = await Chat.findById(message.chatId)
+      .populate('users') // Populate the 'users' field with actual User data
+      .exec();
+
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+
     const { content } = req.body;
     message.content = content;
 
     await message.save();
+    await chat.save();
+
+    const firstUser = chat.users[0];
+    const secondUser = chat.users[1];
+
+    io.emit(
+      `messageUpdated-${compareAndOrderIds(
+        firstUser._id.toString(),
+        secondUser._id.toString()
+      )}`,
+      message
+    );
     res.json(message);
   }
 
@@ -106,17 +136,16 @@ class MessageController {
     if (!message) return res.status(404).json({ error: 'Message not found' });
 
     // Find the associated chat and populate the messages
-    const chat = await Chat.findById(message.chatId);
-    console.log(chat);
+    const chat = await Chat.findById(message.chatId)
+      .populate('users') // Populate the 'users' field with actual User data
+      .exec();
+
     if (!chat) return res.status(404).json({ error: 'Chat not found' });
 
     // Filter out the deleted message from the messages array
     chat.messages = chat.messages.filter((m) => !m._id.equals(message._id));
 
-    console.log(chat.messages);
-
     if (chat.messages.length > 0) {
-      // Sort messages by time, breaking ties with _id
       const latestMessage = chat.messages.sort((a, b) => {
         return b.toString().localeCompare(a.toString());
       })[0];
@@ -129,6 +158,16 @@ class MessageController {
 
     // Save the updated chat
     await chat.save();
+    const firstUser = chat.users[0];
+    const secondUser = chat.users[1];
+
+    io.emit(
+      `messageDeleted-${compareAndOrderIds(
+        firstUser._id.toString(),
+        secondUser._id.toString()
+      )}`,
+      message
+    );
 
     // Respond with the deleted message
     res.json(message);

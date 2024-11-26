@@ -361,6 +361,12 @@ class AuthRoutes {
         .matches(/^[a-zA-Zà-žÀ-Ž\s'-]+$/)
         .withMessage('Name contains invalid characters.')
     );
+
+    this.router.get(
+      '/profile',
+      authorize(['Admin', 'Seller', 'Buyer']),
+      this.authController.refresh_token
+    );
   }
 }
 

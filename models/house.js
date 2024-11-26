@@ -43,8 +43,9 @@ const houseSchema = new mongoose.Schema({
     required: true,
   },
   ownerId: {
-    type: String,
+    type: mongoose.SchemaTypes.ObjectId,
     required: true,
+    ref: 'User',
   },
   category: {
     type: String,

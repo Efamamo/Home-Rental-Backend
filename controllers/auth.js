@@ -199,7 +199,7 @@ export class AuthController {
     user.password = hashedPassword;
     await user.save();
 
-    res.sendStatus(200);
+    res.sendStatus(204);
   }
 
   // promote promotes user from buyer to seller
@@ -281,6 +281,19 @@ export class AuthController {
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: 'server error' });
+    }
+  }
+
+  async getProfile(req, res) {
+    const { id } = req.user;
+
+    try {
+      const user = await User.findById(id).select('-password');
+      if (!user) return res.sendStatus(401);
+      res.json(user);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 }

@@ -4,7 +4,12 @@ import Chat from '../models/chat.js';
 import Message from '../models/message.js';
 
 class ChatController {
+  constructor(io) {
+    this.io = io;
+  }
+
   async getChat(req, res) {
+    console.log(req.body);
     const user2id = req.query.user;
     const user1id = req.user.id;
 
@@ -21,12 +26,25 @@ class ChatController {
       }
 
       const user2 = await User.findById(user2id);
+      const user1 = await User.findById(user1id);
 
       if (!user2) return res.status(404).json({ error: 'User not found' });
 
       const chat = await Chat.findOne({
         users: { $all: [user1id, user2id] },
-      });
+      })
+        .populate('messages')
+        .populate('users')
+        .populate('lastMessage');
+
+      if (!chat) {
+        return res.json({
+          users: [user1, user2],
+          lastMessage: '',
+          messages: [],
+          lastUpdateTime: '',
+        });
+      }
 
       return res.json(chat);
     }
@@ -35,7 +53,10 @@ class ChatController {
 
     const chats = await Chat.find({
       users: { $in: [user1id] },
-    });
+    })
+      .populate('messages')
+      .populate('users')
+      .populate('lastMessage');
 
     res.json(chats);
   }

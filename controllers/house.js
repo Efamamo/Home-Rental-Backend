@@ -8,7 +8,7 @@ import User from '../models/user.js';
 export class HouseController {
   async getHouses(req, res) {
     try {
-      const houses = await House.find().populate('ownerId');
+      const houses = await House.find();
       res.json(houses);
     } catch (error) {
       res.status(500).json({ error });
@@ -95,7 +95,7 @@ export class HouseController {
 
       res.status(201).json(newHouse);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       res.status(500).json({ error });
     }
   }
