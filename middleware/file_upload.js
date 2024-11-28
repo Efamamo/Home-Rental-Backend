@@ -1,3 +1,4 @@
+import path from 'path';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -16,16 +17,9 @@ const fileUpload = multer({
       cb(null, 'uploads/images');
     },
     filename: (req, file, cb) => {
-      const ext = MIME_TYPES[file.mimetype];
-      cb(null, uuidv4() + '.' + ext);
+      cb(null, uuidv4() + path.extname(file.originalname)); // Generate unique filename
     },
   }),
-  fileFilter: (req, file, cb) => {
-    console.log(file);
-    const isValid = !!MIME_TYPES[file.mimetype];
-    const error = isValid ? null : new Error('Invalid image type');
-    cb(error, isValid);
-  },
 });
 
 export const uploadImages = fileUpload.fields([

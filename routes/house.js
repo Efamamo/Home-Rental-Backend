@@ -200,6 +200,8 @@ class HouseRoutes {
       this.houseController.addHouse
     );
 
+    this.router.get('/verify', this.houseController.verifyPayment);
+
     /**
      * @swagger
      * /houses/{id}:
