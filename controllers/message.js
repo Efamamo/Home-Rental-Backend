@@ -27,10 +27,15 @@ class MessageController {
     const sender = await User.findById(id);
     if (!sender) return res.status(404).json({ error: 'Sender not found' });
 
+    if (sender.coins < 10)
+      return res.status(422).json({ error: 'You dont have enough coin' });
+
     const user = await User.findById(recipientId);
     if (!user) return res.status(404).json({ error: 'Recipient not found' });
 
     if (id === recipientId) return res.sendStatus(409);
+    sender.coins -= 10;
+    await sender.save();
 
     const chat = await Chat.findOne({
       users: { $all: [id, recipientId] },
@@ -53,8 +58,6 @@ class MessageController {
 
       await newChat.save();
       await message.save();
-
-      console.log(compareAndOrderIds(id, recipientId));
 
       io.emit(`messageAdded-${compareAndOrderIds(id, recipientId)}`, {
         id: newChat._id,
@@ -125,6 +128,7 @@ class MessageController {
 
   async deleteMessage(req, res) {
     const { mid } = req.params;
+    const { id } = req.user;
 
     // Validate the message ID
     if (!mongoose.Types.ObjectId.isValid(mid)) {
@@ -132,8 +136,20 @@ class MessageController {
     }
 
     // Find and delete the message
-    const message = await Message.findByIdAndDelete(mid);
-    if (!message) return res.status(404).json({ error: 'Message not found' });
+    const message = await Message.findById(mid);
+
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+
+    // Assuming `req.user.id` contains the ID of the logged-in user
+    if (message.owner.toString() !== id) {
+      return res
+        .status(403)
+        .json({ error: 'Unauthorized: You are not the owner of this message' });
+    }
+
+    await message.deleteOne();
 
     // Find the associated chat and populate the messages
     const chat = await Chat.findById(message.chatId)

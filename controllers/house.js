@@ -201,54 +201,6 @@ export class HouseController {
     }
   }
 
-  async rate(req, res) {
-    try {
-      const id = req.params.id;
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ error: 'Invalid House ID' });
-      }
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const { amount } = req.body;
-
-      if (typeof amount !== 'number' || amount < 1 || amount > 5) {
-        return res
-          .status(400)
-          .json({ error: 'Amount must be a number between 1 and 5.' });
-      }
-
-      const userId = req.user.id;
-
-      const house = await House.findById(id);
-      if (!house) {
-        return res.status(404).json({ error: 'House Not Found' });
-      }
-
-      const userHasRated = house.raters.has(userId);
-
-      if (userHasRated) {
-        const previousRating = house.raters.get(userId);
-        house.total_amount = house.total_amount + amount - previousRating;
-      } else {
-        house.total_amount += amount;
-        house.total_people += 1;
-      }
-
-      house.average_rating = house.total_amount / house.total_people;
-      house.raters.set(userId, amount);
-
-      await house.save();
-
-      res.json(house);
-    } catch (error) {
-      console.error('Error rating house:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  }
-
   async housePayment(req, res) {
     const er = validationResult(req);
 

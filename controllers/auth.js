@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import { formatErrors } from '../lib/util.js';
 import { hashPassword, matchPassword } from '../services/password_service.js';
+import mongoose from 'mongoose';
 import User from '../models/user.js';
 import {
   generate_access_token,
@@ -79,6 +80,7 @@ export class AuthController {
     const hashedPassword = await hashPassword(password);
 
     const newUser = new User({
+      coins: role === 'Seller' ? 200 : 100,
       name,
       password: hashedPassword,
       phoneNumber,
@@ -133,45 +135,38 @@ export class AuthController {
 
     if (!errors.isEmpty()) {
       const formattedErrors = formatErrors(errors);
-      res.status(400).json({ errors: formattedErrors });
-      return;
+      return res.status(400).json({ errors: formattedErrors }); // Early return
     }
 
     const authHeader = req.headers['authorization'];
     const access_token = authHeader && authHeader.split(' ')[1];
     const { token } = req.body;
 
-    if (access_token == null) {
-      jwt.verify(token, process.env.REFRESH_TOKEN_KEY, (err, user) => {
-        if (err) return res.sendStatus(401);
+    try {
+      // If `access_token` exists, verify it
+      if (access_token) {
+        const user = jwt.verify(access_token, process.env.ACCESS_TOKEN_KEY);
+        return res.status(201).json({ access_token, refresh_token: token }); // Return early
+      }
 
-        const access_token = generate_access_token(
-          user.id,
-          user.role,
-          user.name,
-          user.phoneNumber
-        );
+      // If `access_token` is missing, verify the refresh token
+      const user = jwt.verify(token, process.env.REFRESH_TOKEN_KEY);
 
-        res.status(201).json({ access_token, refresh_token: token });
-      });
-    } else {
-      jwt.verify(access_token, process.env.ACCESS_TOKEN_KEY, (err, user) => {
-        if (err) {
-          jwt.verify(token, process.env.REFRESH_TOKEN_KEY, (err, user) => {
-            if (err) return res.sendStatus(401);
+      // Generate a new access token if refresh token is valid
+      const new_access_token = generate_access_token(
+        user.id,
+        user.role,
+        user.name,
+        user.phoneNumber
+      );
 
-            const access_token = generate_access_token(
-              user.id,
-              user.role,
-              user.name,
-              user.phoneNumber
-            );
-
-            return res.status(201).json({ access_token, refresh_token: token });
-          });
-        }
-        res.status(201).json({ access_token, refresh_token: token });
-      });
+      return res
+        .status(201)
+        .json({ access_token: new_access_token, refresh_token: token });
+    } catch (err) {
+      // Handle JWT verification errors
+      console.error(err);
+      return res.sendStatus(401); // Unauthorized
     }
   }
 
@@ -294,6 +289,77 @@ export class AuthController {
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async rate(req, res) {
+    try {
+      const id = req.params.id;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid House ID' });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        const formattedErrors = formatErrors(errors);
+        res.status(400).json({ errors: formattedErrors });
+        return;
+      }
+
+      const { amount } = req.body;
+      console.log(amount);
+
+      if (typeof amount !== 'number' || amount < 1 || amount > 5) {
+        return res
+          .status(400)
+          .json({ error: 'Amount must be a number between 1 and 5.' });
+      }
+
+      const raterId = req.user.id;
+
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({ error: 'User Not Found' });
+      }
+
+      const userHasRated = user.raters.has(raterId);
+
+      if (userHasRated) {
+        const previousRating = user.raters.get(raterId);
+        user.total_amount = user.total_amount + amount - previousRating;
+      } else {
+        user.total_amount += amount;
+        user.total_people += 1;
+      }
+
+      user.average_rating = user.total_amount / user.total_people;
+      user.raters.set(raterId, amount);
+
+      await user.save();
+
+      res.json(user);
+    } catch (error) {
+      console.error('Error rating user:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  async fetchUserRate(req, res) {
+    try {
+      const { id } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ error: 'Invalid House ID' });
+      }
+
+      const user = await User.findById(id);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      return res.json({ rate: user.average_rating });
+    } catch (error) {
+      return res.status(500).json({ error: 'Server error' });
     }
   }
 }

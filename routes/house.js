@@ -336,50 +336,6 @@ class HouseRoutes {
       authorize(['Admin', 'Seller']),
       this.houseController.deleteHouse
     );
-
-    /**
-     * @swagger
-     * /houses/{id}/rate:
-     *   patch:
-     *     summary: Rate a house
-     *     tags: [Houses]
-     *     security:
-     *       - bearerAuth: []
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         required: true
-     *         schema:
-     *           type: string
-     *         description: The ID of the house to rate.
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               amount:
-     *                 type: number
-     *                 description: Rating amount (1 to 5).
-     *     responses:
-     *       200:
-     *         description: House rated successfully.
-     *       400:
-     *         description: Validation error.
-     *       404:
-     *         description: House not found.
-     *       401:
-     *         description: Unauthorized access.
-     */
-
-    // Rate a house
-    this.router.patch(
-      '/:id/rate',
-      authorize(['Admin', 'Seller', 'Buyer']),
-      check('amount').isNumeric().withMessage('amount should be a number'),
-      this.houseController.rate
-    );
   }
 
   getRouter() {

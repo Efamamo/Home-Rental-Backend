@@ -53,24 +53,8 @@ const houseSchema = new mongoose.Schema({
   },
   sub_category: {
     type: String,
-  },
-  average_rating: {
-    type: Number,
-    default: 0,
-  },
-  total_people: {
-    type: Number,
-    default: 0,
-  },
-  total_amount: {
-    type: Number,
-    default: 0,
-  },
-  raters: {
-    type: Map,
-    of: Number,
-    default: {},
-  },
+  }
+  
 });
 
 export const House = mongoose.model('House', houseSchema);

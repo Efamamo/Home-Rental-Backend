@@ -24,6 +24,27 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  average_rating: {
+    type: Number,
+    default: 0,
+  },
+  total_people: {
+    type: Number,
+    default: 0,
+  },
+  total_amount: {
+    type: Number,
+    default: 0,
+  },
+  raters: {
+    type: Map,
+    of: Number,
+    default: {},
+  },
+  coins: {
+    type: Number,
+    default: 100
+  }
 });
 
 const User = mongoose.model('User', userSchema);
