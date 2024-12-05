@@ -1,4 +1,5 @@
 import { Coin } from '../models/coin.js';
+import User from '../models/user.js';
 
 export class CoinsController {
   async buyCoins(req, res) {
