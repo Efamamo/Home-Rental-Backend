@@ -12,7 +12,7 @@ export class CoinsController {
 
     const tx = `chewatatest-${newCoin._id}`;
 
-    const url = `http://192.168.71.41:3000/api/v1/coins/verify?id=${tx}`;
+    const url = `https://home-rental-backend-1-8uxh.onrender.com/api/v1/coins/verify?id=${tx}`;
 
     var myHeaders = new Headers();
     myHeaders.append('Authorization', `Bearer ${process.env.CHAPA_SECRET_KEY}`);
