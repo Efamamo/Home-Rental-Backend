@@ -83,7 +83,76 @@ export class CoinsController {
       user.coins += coin.coins;
       await user.save();
 
-      res.sendStatus(200);
+      res.send(`<!DOCTYPE html>
+            <html lang='en'>
+            <head>
+                <meta charset='UTF-8' />
+                <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+                <title>Payment Success</title>
+                <style>
+                body {
+                    font-family: 'Arial', sans-serif;
+                    background-color: #f4f6f9;
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    text-align: center;
+                }
+                .container {
+                    background-color: #fff;
+                    padding: 40px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    width: 100%;
+                    max-width: 500px;
+                }
+                h1 {
+                    font-size: 36px;
+                    color: #4caf50;
+                    margin-bottom: 20px;
+                }
+                p {
+                    font-size: 18px;
+                    color: #555;
+                    margin-bottom: 30px;
+                }
+                .icon {
+                    font-size: 50px;
+                    color: #4caf50;
+                    margin-bottom: 20px;
+                }
+                .cta-button {
+                    display: inline-block;
+                    padding: 15px 30px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    background-color: #4caf50;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    transition: background-color 0.3s;
+                }
+                .cta-button:hover {
+                    background-color: #45a049;
+                }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                <div class="icon">&#x1F389;</div>
+                <h1>Payment Successful!</h1>
+                <p>
+                    Thank you for your purchase! Your transaction was completed
+                    successfully.
+                </p>
+                
+                </div>
+            </body>
+            </html>
+`);
     } catch (err) {
       console.error(`Error retrieving session: ${err.message}`);
       res.status(500).send({ error: err });
