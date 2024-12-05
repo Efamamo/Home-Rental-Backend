@@ -13,6 +13,8 @@ import ChatRoutes from './routes/chat.js';
 import { Server } from 'socket.io';
 import HouseRoutes from './routes/house.js';
 import { handleSocket } from './lib/util.js';
+import CoinRoutes from './routes/coins.js';
+import { CoinsController } from './controllers/coins.js';
 dotenv.config();
 
 const app = express();
@@ -42,6 +44,9 @@ const messageRouter = new MessageRoutes(messageController);
 const chatController = new ChatController();
 const chatRouter = new ChatRoutes(chatController);
 
+const coinControler = new CoinsController();
+const coinRouter = new CoinRoutes(coinControler);
+
 const houseController = new HouseController();
 const houseRouter = new HouseRoutes(houseController);
 
@@ -50,6 +55,7 @@ app.use('/api/v1/auth', authRoutes.router);
 app.use('/api/v1/houses', houseRouter.router);
 app.use('/api/v1/chats', chatRouter.router);
 app.use('/api/v1/messages', messageRouter.router);
+app.use('/api/v1/coins', coinRouter.router);
 
 setupSwagger(app);
 

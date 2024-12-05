@@ -13,7 +13,6 @@ const chatSchema = new mongoose.Schema({
   ],
   lastMessage: {
     type: mongoose.SchemaTypes.ObjectId,
-    required: true,
     ref: 'Message',
   },
 

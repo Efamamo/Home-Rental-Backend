@@ -9,7 +9,6 @@ class ChatController {
   }
 
   async getChat(req, res) {
-    
     const user2id = req.query.user;
     const user1id = req.user.id;
 
