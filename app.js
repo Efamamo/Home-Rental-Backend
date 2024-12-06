@@ -50,7 +50,10 @@ const coinRouter = new CoinRoutes(coinControler);
 const houseController = new HouseController();
 const houseRouter = new HouseRoutes(houseController);
 
-app.use('/uploads/images', express.static('uploads/images'));
+app.use(
+  '/uploads/images',
+  express.static(path.join(__dirname, 'uploads/images'))
+);
 app.use('/api/v1/auth', authRoutes.router);
 app.use('/api/v1/houses', houseRouter.router);
 app.use('/api/v1/chats', chatRouter.router);
