@@ -1,6 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectToDB from './database/mongoose.js';
 import { setupSwagger } from './lib/swagger.js';
 import AuthRoutes from './routes/auth.js';
@@ -49,11 +51,9 @@ const coinRouter = new CoinRoutes(coinControler);
 
 const houseController = new HouseController();
 const houseRouter = new HouseRoutes(houseController);
-
-app.use(
-  '/uploads/images',
-  express.static(path.join(__dirname, 'uploads/images'))
-);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads/images', express.static(__dirname + 'uploads/images'));
 app.use('/api/v1/auth', authRoutes.router);
 app.use('/api/v1/houses', houseRouter.router);
 app.use('/api/v1/chats', chatRouter.router);
