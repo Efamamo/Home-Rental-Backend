@@ -53,7 +53,10 @@ const houseController = new HouseController();
 const houseRouter = new HouseRoutes(houseController);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use('/uploads/images', express.static(__dirname + 'uploads/images'));
+app.use(
+  '/uploads/images',
+  express.static(path.join(__dirname, 'uploads', 'images'))
+);
 app.use('/api/v1/auth', authRoutes.router);
 app.use('/api/v1/houses', houseRouter.router);
 app.use('/api/v1/chats', chatRouter.router);
