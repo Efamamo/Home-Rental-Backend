@@ -179,7 +179,7 @@ class MessageRoutes {
       '/:id',
       authorize(['Admin', 'Seller', 'Buyer']),
       check('content').notEmpty().withMessage('content is required'),
-      this.messageController.deleteMessage
+      this.messageController.updateMessage
     );
   }
 }
