@@ -176,7 +176,7 @@ class MessageRoutes {
      */
 
     this.router.patch(
-      '/:id',
+      '/:mid',
       authorize(['Admin', 'Seller', 'Buyer']),
       check('content').notEmpty().withMessage('content is required'),
       this.messageController.updateMessage
