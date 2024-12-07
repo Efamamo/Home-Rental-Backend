@@ -75,6 +75,8 @@ export class HouseController {
       } = req.body;
       const { id } = req.user;
 
+      console.log(req.files.sub_images);
+
       const user = await User.findById(id);
       if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -86,7 +88,7 @@ export class HouseController {
         for_rent,
         ownerId: id,
         main_image: image_url[0].path,
-        sub_images: image_url.sub_images ? image_url.sub_images[0].path : [],
+        sub_images: req.files.sub_images ? req.files.sub_images.map((img) => img.path) : [],
         number_of_bedrooms,
         number_of_bathrooms,
         number_of_floors,
