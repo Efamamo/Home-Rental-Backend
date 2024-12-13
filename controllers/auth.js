@@ -67,7 +67,7 @@ export class AuthController {
       return;
     }
 
-    const { name, phoneNumber, password, role } = req.body;
+    const { name, phoneNumber, password } = req.body;
 
     let user = await User.findOne({ name });
 
@@ -80,11 +80,11 @@ export class AuthController {
     const hashedPassword = await hashPassword(password);
 
     const newUser = new User({
-      coins: role === 'Seller' ? 200 : 100,
+      coins: 200,
       name,
       password: hashedPassword,
       phoneNumber,
-      role,
+      role: 'Seller',
     });
 
     await newUser.save();
@@ -198,18 +198,20 @@ export class AuthController {
   }
 
   // promote promotes user from buyer to seller
-  async promote(req, res) {
+  async changeStatus(req, res) {
     try {
-      const { id } = req.params;
+      const { id } = req.user;
       const user = await User.findById(id);
 
       if (!user) return res.status(404).json({ error: 'User not found' });
 
       if (user.role == 'Buyer') {
         user.role = 'Seller';
-        await user.save();
+      }else{
+        user.role = 'Buyer';
       }
 
+      await user.save();
       res.sendStatus(200);
     } catch (error) {
       console.log(error);

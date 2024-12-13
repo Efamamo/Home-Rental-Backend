@@ -123,14 +123,13 @@ class AuthRoutes {
           .matches(/^[a-zA-Zà-žÀ-Ž\s'-]+$/)
           .withMessage('Name contains invalid characters.'),
         check('password')
-          .isLength({ min: 6 })
-          .withMessage('minimum password length is 6'),
+          .isLength({ min: 6, max: 6 })
+          .withMessage('password length should be 6')
+          .isNumeric()
+          .withMessage('password should be a number'),
         check('phoneNumber')
           .isMobilePhone()
           .withMessage('phoneNumber should be mobile phone'),
-        check('role')
-          .isIn(['Seller', 'Buyer'])
-          .withMessage('Role must be either Seller or Buyer'),
       ],
       this.authController.signup
     );
@@ -309,9 +308,9 @@ class AuthRoutes {
      */
 
     this.router.patch(
-      '/promote/:id',
-      authorize(['Admin']),
-      this.authController.promote
+      '/change-status/',
+      authorize(['Seller', 'Admin', 'Buyer']),
+      this.authController.changeStatus
     );
 
     /**
@@ -338,11 +337,6 @@ class AuthRoutes {
      *         description: Unauthorized access.
      */
 
-    this.router.patch(
-      '/demote/:id',
-      authorize(['Admin']),
-      this.authController.demote
-    );
     this.router.get(
       '/profile',
       authorize(['Admin', 'Buyer', 'Seller']),
@@ -411,7 +405,6 @@ class AuthRoutes {
       check('amount').isNumeric().withMessage('amount should be a number'),
       this.authController.rate
     );
-
 
     this.router.get(
       '/users/:id/rate',
