@@ -308,9 +308,15 @@ class AuthRoutes {
      */
 
     this.router.patch(
-      '/change-status/',
+      '/become-seller',
       authorize(['Seller', 'Admin', 'Buyer']),
-      this.authController.changeStatus
+      this.authController.becomeSeller
+    );
+
+    this.router.patch(
+      '/become-buyer',
+      authorize(['Seller', 'Admin', 'Buyer']),
+      this.authController.becomeBuyer
     );
 
     /**

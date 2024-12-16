@@ -198,18 +198,33 @@ export class AuthController {
   }
 
   // promote promotes user from buyer to seller
-  async changeStatus(req, res) {
+  async becomeSeller(req, res) {
     try {
       const { id } = req.user;
       const user = await User.findById(id);
 
       if (!user) return res.status(404).json({ error: 'User not found' });
 
-      if (user.role == 'Buyer') {
-        user.role = 'Seller';
-      }else{
-        user.role = 'Buyer';
-      }
+      user.role = 'Seller';
+     
+
+      await user.save();
+      res.sendStatus(200);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+   // promote promotes user from buyer to seller
+   async becomeBuyer(req, res) {
+    try {
+      const { id } = req.user;
+      const user = await User.findById(id);
+
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      user.role = 'Buyer';
+      
 
       await user.save();
       res.sendStatus(200);
