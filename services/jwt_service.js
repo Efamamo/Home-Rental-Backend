@@ -7,7 +7,7 @@ export function generate_access_token(id, role, name, phoneNumber) {
     const access_token = jwt.sign(
       { id, role, name, phoneNumber },
       process.env.ACCESS_TOKEN_KEY,
-      { expiresIn: '15m' }
+      { expiresIn: '15d' }
     );
     return access_token;
   } catch (e) {
